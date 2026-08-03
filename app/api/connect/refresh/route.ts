@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getStripe } from "@/lib/stripe/server";
+export async function GET(request:Request){const supabase=await createClient();const user=supabase?(await supabase.auth.getUser()).data.user:null;if(!user)return NextResponse.redirect(new URL("/connexion",request.url));const {data}=await createAdminClient().from("organizer_profiles").select("stripe_connect_account_id").eq("organizer_id",user.id).single();if(!data?.stripe_connect_account_id)return NextResponse.redirect(new URL("/organisateur/onboarding?erreur=stripe",request.url));const origin=process.env.NEXT_PUBLIC_SITE_URL??new URL(request.url).origin;const link=await getStripe().accountLinks.create({account:data.stripe_connect_account_id,refresh_url:`${origin}/api/connect/refresh`,return_url:`${origin}/api/connect/return`,type:"account_onboarding"});return NextResponse.redirect(link.url);}

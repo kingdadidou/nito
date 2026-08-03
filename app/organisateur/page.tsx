@@ -1,0 +1,4 @@
+import Link from "next/link";
+import { DashboardNav } from "@/components/dashboard-nav";
+export const metadata = { title: "Espace organisateur" };
+export default function Organizer() { return <section className="page-shell"><DashboardNav role="organizer"/><div className="page-header"><div><span className="eyebrow green">ORGANISATEUR</span><h1>Tableau de bord</h1></div><Link className="primary" href="/organisateur/sorties/nouvelle">Créer une sortie</Link></div><div className="admin-kpis"><div><span>Sorties actives</span><strong>3</strong></div><div><span>Participants</span><strong>18</strong></div><div><span>Revenus</span><strong>426 €</strong></div><div><span>Note moyenne</span><strong>4,9</strong></div></div><section className="panel-card"><h2>Vos prochaines sorties</h2><p>8 août · Initiation à l’ornithologie · 5/8 participants</p></section></section> }

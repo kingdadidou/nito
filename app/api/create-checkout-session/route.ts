@@ -1,0 +1,25 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { eurosToCents,getStripe } from "@/lib/stripe/server";
+export async function POST(request:Request){
+  try{
+    const form=await request.formData();const tripId=String(form.get("tripId")??"");const quantity=Number(form.get("quantity")??1);
+    if(!/^[0-9a-f-]{36}$/i.test(tripId)||!Number.isInteger(quantity))return NextResponse.json({error:"Réservation invalide"},{status:400});
+    const supabase=await createClient();if(!supabase)return NextResponse.json({error:"Supabase non configuré"},{status:503});
+    const {data:{user}}=await supabase.auth.getUser();if(!user)return NextResponse.redirect(new URL("/connexion",request.url),303);
+    const {data,error}=await supabase.rpc("prepare_booking",{p_trip_id:tripId,p_number_of_people:quantity});
+    if(error||!data?.[0])return NextResponse.json({error:error?.message??"Réservation impossible"},{status:409});
+    const prepared=data[0];const admin=createAdminClient();
+    const {data:trip}=await admin.from("trips").select("organizer_id").eq("id",tripId).single();
+    const {data:organizer}=await admin.from("organizer_profiles").select("stripe_connect_account_id,stripe_charges_enabled,stripe_payouts_enabled").eq("organizer_id",trip?.organizer_id).single();
+    if(Number(prepared.amount)===0){await admin.from("bookings").update({payment_status:"paye",booking_status:"confirmee"}).eq("id",prepared.booking_id);return NextResponse.redirect(new URL("/calendrier?reservation=confirmee",request.url),303);}
+    if(!organizer?.stripe_connect_account_id||!organizer.stripe_charges_enabled||!organizer.stripe_payouts_enabled)return NextResponse.json({error:"L’organisateur ne peut pas encore recevoir de paiements"},{status:409});
+    const stripe=getStripe();const account=await stripe.accounts.retrieve(organizer.stripe_connect_account_id);
+    if(!account.charges_enabled||!account.payouts_enabled)return NextResponse.json({error:"Le compte de versement de l’organisateur est incomplet"},{status:409});
+    const origin=process.env.NEXT_PUBLIC_SITE_URL??new URL(request.url).origin;
+    const session=await stripe.checkout.sessions.create({mode:"payment",customer_email:user.email,line_items:[{quantity:1,price_data:{currency:"eur",unit_amount:eurosToCents(Number(prepared.amount)),product_data:{name:prepared.trip_title,description:`${quantity} participant${quantity>1?"s":""}`}}}],client_reference_id:prepared.booking_id,metadata:{booking_id:prepared.booking_id,trip_id:tripId,participant_id:user.id},payment_intent_data:{application_fee_amount:eurosToCents(Number(prepared.platform_fee)),transfer_data:{destination:organizer.stripe_connect_account_id},metadata:{booking_id:prepared.booking_id,trip_id:tripId}},success_url:`${origin}/calendrier?reservation=confirmee&session_id={CHECKOUT_SESSION_ID}`,cancel_url:`${origin}/sorties/${tripId}?paiement=annule`},{idempotencyKey:`checkout:${prepared.booking_id}`});
+    const {error:updateError}=await admin.from("bookings").update({stripe_checkout_session_id:session.id}).eq("id",prepared.booking_id);if(updateError)throw updateError;
+    return NextResponse.redirect(session.url!,303);
+  }catch(error){console.error("Checkout Connect",error);return NextResponse.json({error:"Impossible de créer le paiement"},{status:500});}
+}

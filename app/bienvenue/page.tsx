@@ -1,0 +1,4 @@
+import Link from "next/link";
+import {createClient} from "@/lib/supabase/server";
+export default async function Welcome(){const supabase=await createClient();const user=supabase?(await supabase.auth.getUser()).data.user:null;const profile=user&&supabase?(await supabase.from("profiles").select("first_name,user_type").eq("id",user.id).single()).data:null;return <section className="page-shell"><div className="welcome-card"><span className="success-mark">✓</span><span className="eyebrow green">ADRESSE E-MAIL VALIDÉE</span><h1>Bienvenue{profile?.first_name?`, ${profile.first_name}`:""} !</h1><p>Votre compte NITO est actif.</p>{profile?.user_type==="organisateur"?<Link className="primary" href="/organisateur/onboarding">Compléter mon profil organisateur</Link>:profile?.user_type==="administrateur"?<Link className="primary" href="/administration">Ouvrir l’administration</Link>:<Link className="primary" href="/explorer">Explorer les sorties</Link>}</div></section>}
+

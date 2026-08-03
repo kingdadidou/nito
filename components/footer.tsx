@@ -1,0 +1,4 @@
+import Image from "next/image";
+import Link from "next/link";
+export function Footer(){return <footer><div><Link className="brand footer-brand" href="/" aria-label="NITO — Accueil"><Image className="brand-logo" src="/nito-logo.png" alt="" width={50} height={50}/><span>NITO</span></Link><p>Des expériences nature, humaines et accessibles.</p></div><div><b>Découvrir</b><Link href="/explorer">Les sorties</Link><Link href="/a-propos">Qui sommes-nous ?</Link><Link href="/inscription?role=organisateur">Devenir organisateur</Link></div><div><b>Votre espace</b><Link href="/profil">Mon profil</Link><Link href="/messages">Messagerie</Link><Link href="/aide">Centre d’aide</Link></div><div><b>Informations</b><Link href="/contact">Contact</Link><Link href="/conditions">Conditions générales</Link><Link href="/confidentialite">Confidentialité</Link></div></footer>}
+

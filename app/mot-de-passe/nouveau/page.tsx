@@ -1,0 +1,3 @@
+import { updatePassword } from "@/app/connexion/actions";
+export const metadata = { title: "Nouveau mot de passe" };
+export default async function NewPassword({ searchParams }: { searchParams: Promise<{ erreur?: string }> }) { const q=await searchParams; return <section className="page-shell auth-shell"><div className="form-intro"><span className="eyebrow green">SÉCURITÉ</span><h1>Nouveau mot de passe</h1></div><form className="big-form auth-form" action={updatePassword}>{q.erreur&&<p className="form-alert error">Le lien a expiré ou le mot de passe est trop court.</p>}<label>Nouveau mot de passe<input name="password" type="password" minLength={8} autoComplete="new-password" required/></label><button className="primary wide">Enregistrer</button></form></section> }
