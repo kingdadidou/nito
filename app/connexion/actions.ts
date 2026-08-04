@@ -14,6 +14,7 @@ export async function signIn(form: FormData) {
 
 export async function signUp(form: FormData) {
   const supabase = await authClient();
+  if (form.get("legal_acceptance") !== "accepted") redirect("/inscription?erreur=conditions");
   const password = String(form.get("password") ?? "");
   if (password.length < 8) redirect("/inscription?erreur=mot_de_passe");
   const intent = String(form.get("signup_intent") ?? "participer");

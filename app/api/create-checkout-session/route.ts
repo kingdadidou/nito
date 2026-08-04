@@ -5,6 +5,7 @@ import { eurosToCents,getStripe } from "@/lib/stripe/server";
 export async function POST(request:Request){
   try{
     const form=await request.formData();const tripId=String(form.get("tripId")??"");const quantity=Number(form.get("quantity")??1);
+    if(form.get("booking_terms")!=="accepted")return NextResponse.json({error:"Les conditions de réservation doivent être acceptées"},{status:400});
     if(!/^[0-9a-f-]{36}$/i.test(tripId)||!Number.isInteger(quantity))return NextResponse.json({error:"Réservation invalide"},{status:400});
     const supabase=await createClient();if(!supabase)return NextResponse.json({error:"Supabase non configuré"},{status:503});
     const {data:{user}}=await supabase.auth.getUser();if(!user)return NextResponse.redirect(new URL("/connexion",request.url),303);

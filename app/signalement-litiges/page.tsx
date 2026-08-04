@@ -1,0 +1,9 @@
+import Link from "next/link";
+export const metadata={title:"Signalements et litiges"};
+export default function ReportsAndDisputes(){return <section className="page-shell narrow legal-page"><span className="eyebrow green">CONFIANCE ET SÉCURITÉ</span><h1>Signalements, réclamations et litiges</h1><p className="legal-version">Version du 4 août 2026.</p>
+<h2>Urgence</h2><p>En cas de danger immédiat, contactez les services d’urgence. NITO n’est pas un service d’urgence.</p>
+<h2>Signaler un contenu ou un utilisateur</h2><p>Utilisez le bouton « Signaler » dans la messagerie ou la <Link href="/contact">page Contact</Link>. Indiquez l’URL ou l’identifiant concerné, le motif, une description précise et, si possible, les éléments justificatifs. Un accusé de réception doit être envoyé.</p>
+<h2>Traitement</h2><p>NITO examine les signalements de manière diligente, impartiale et proportionnée. Selon la situation : demande d’informations, masquage temporaire, retrait, remboursement, avertissement, suspension ou transmission aux autorités. L’auteur d’un contenu affecté est informé du motif, sauf interdiction légale ou risque pour la sécurité.</p>
+<h2>Contestation d’une décision</h2><p>L’utilisateur concerné peut demander un réexamen en répondant à la notification ou via la page Contact. La demande doit préciser la décision contestée et ses motifs.</p>
+<h2>Réclamation liée à une réservation</h2><p>Contactez d’abord l’organisateur via la messagerie, puis NITO si aucune solution n’est trouvée. Conservez les échanges, la confirmation et les justificatifs. NITO peut faciliter la discussion sans se substituer au juge.</p>
+<h2>Médiation de la consommation</h2><p>Avant l’ouverture commerciale, NITO devra désigner un médiateur de la consommation compétent et publier ses coordonnées. Cette rubrique devra être complétée après signature de la convention de médiation.</p></section>}
