@@ -11,6 +11,14 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   const { data: activity } = await supabase.from("activities").select("id").eq("name", String(payload.activity)).single();
   if (!activity) return NextResponse.json({ error: "Activité inconnue" }, { status: 400 });
+  const offerType=String(payload.offer_type||"rencontre_gratuite");
+  if(!["rencontre_gratuite","experience_payante","encadrement_sportif_remunere"].includes(offerType))return NextResponse.json({error:"Type de sortie invalide"},{status:400});
+  const price=Number(payload.price||0);
+  if((offerType==="rencontre_gratuite"&&price!==0)||(offerType!=="rencontre_gratuite"&&price<=0))return NextResponse.json({error:"Le prix ne correspond pas au type de sortie"},{status:400});
+  if(offerType==="encadrement_sportif_remunere"){
+    const {data:organizer}=await supabase.from("organizer_profiles").select("organizer_level,qualification_verified,insurance_verified").eq("organizer_id",user.id).single();
+    if(!organizer||!["professionnel_diplome","guide_educateur_sportif"].includes(organizer.organizer_level)||!organizer.qualification_verified||!organizer.insurance_verified)return NextResponse.json({error:"Un diplôme, une carte professionnelle si elle est requise, et une assurance vérifiés sont nécessaires pour proposer cet encadrement"},{status:403});
+  }
   const duration = Number.parseInt(String(payload.duration), 10);const latitude=Number(payload.latitude),longitude=Number(payload.longitude);
   if(!Number.isFinite(latitude)||latitude< -90||latitude>90||!Number.isFinite(longitude)||longitude< -180||longitude>180)return NextResponse.json({error:"Placez le point de rendez-vous sur la carte"},{status:400});
   const { data:trip,error } = await supabase.from("trips").insert({
@@ -18,7 +26,7 @@ export async function POST(request: Request) {
     location: String(payload.location),latitude,longitude,meeting_point:String(payload.meeting_point),date: String(payload.date),
     start_time: String(payload.time), duration: Number.isFinite(duration) ? duration * 60 : 180,
     difficulty: String(payload.difficulty || "debutant"), maximum_participants: Number(payload.maximum_participants || 8),
-    price: Number(payload.price || 0), equipment: String(payload.equipment || ""), status: "en_attente"
+    price, offer_type:offerType, equipment: String(payload.equipment || ""), status: "en_attente"
   }).select("id").single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   const image=form.get("image");

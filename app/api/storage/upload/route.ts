@@ -25,9 +25,10 @@ export async function POST(request:Request){
     const publicUrl=admin.storage.from(bucket).getPublicUrl(path).data.publicUrl;
     await admin.from("profiles").update({avatar_url:publicUrl}).eq("id",user.id);
   }else{
-    const documentType=bucket==="insurance-documents"?"assurance":"professionnel";
+    const requestedType=String(form.get("document_type")??"");
+    const allowedDocumentTypes=new Set(["assurance_rc_pro","diplome","carte_professionnelle","affiliation_structure"]);
+    const documentType=allowedDocumentTypes.has(requestedType)?requestedType:(bucket==="insurance-documents"?"assurance_rc_pro":"diplome");
     await admin.from("organizer_documents").insert({organizer_id:user.id,document_type:documentType,storage_path:`${bucket}/${path}`,status:"en_attente"});
   }
   return NextResponse.redirect(new URL(`${redirectTo}?upload=ok`,request.url),303);
 }
-

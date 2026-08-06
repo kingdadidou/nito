@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/annulations",
     "/transparence",
     "/signalement-litiges",
+    "/securite-sportive",
   ];
 
   return pages.map((path) => ({
