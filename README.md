@@ -1,8 +1,8 @@
-# NaturEnsemble
+# NITO
 
-> Version 0.2 : migration du prototype vers Next.js, Supabase et Stripe.
+Plateforme de sorties nature construite avec Next.js, Supabase et Stripe Connect.
 
-## Démarrage Next.js
+## Développement local
 
 ```bash
 npm install
@@ -10,44 +10,39 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Ouvrir `http://localhost:3000`. Sans variables Supabase/Stripe, l'interface reste consultable en mode démonstration ; les écritures serveur signalent explicitement que le service concerné n'est pas configuré.
+Ouvrir `http://localhost:3000`.
 
-## Nouvelle architecture
+## Configuration requise
 
-- `app/` : pages publiques et espaces utilisateur, organisateur et administrateur
-- `components/` : composants d'interface partagés
-- `app/api/` : routes serveur pour les sorties, Stripe Checkout et le webhook
-- `lib/supabase/` : client Supabase SSR utilisant des cookies
-- `supabase/migrations/` : schéma PostgreSQL et politiques RLS
-- `index.html`, `app.js`, `styles.css` : prototype historique conservé comme référence
-
-Prototype front-end complet d'une plateforme de mise en relation entre passionnés de nature et débutants.
-
-## Fonctions intégrées
-- Accueil immersif
-- Recherche et filtres
-- Carte illustrative
-- Fiches détaillées
-- Favoris
-- Réservation simulée
-- Création de sorties
-- Messagerie
-- Calendrier et export ICS
-- Profils et avis
-- Notifications
-- Sécurité et signalement
-- Administration et modération
-- Stockage local des données avec localStorage
-- Design responsive mobile / tablette / ordinateur
-
-## Lancement
-Ouvrir simplement `index.html` dans un navigateur récent.
-
-Pour éviter certaines restrictions locales du navigateur, il est aussi possible de lancer :
-```bash
-python -m http.server 8000
+```env
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 ```
-puis d'ouvrir `http://localhost:8000`.
 
-## Limites du prototype
-Les paiements, l'authentification, la géolocalisation cartographique réelle, les notifications push et la base de données sont simulés. Pour une mise en production, prévoir une API sécurisée, PostgreSQL, un service d'authentification, Stripe Connect, un fournisseur cartographique et un hébergement.
+La clé Supabase `service_role` et les secrets Stripe ne doivent jamais être placés dans une variable `NEXT_PUBLIC_*`.
+
+## Architecture
+
+- `app/` : pages publiques et espaces participant, organisateur et administrateur
+- `components/` : composants partagés
+- `app/api/` : routes serveur sécurisées
+- `lib/supabase/` : clients Supabase SSR et administrateur
+- `lib/stripe/` : client Stripe côté serveur
+- `supabase/migrations/` : schéma PostgreSQL, fonctions, déclencheurs et politiques RLS
+
+## Données
+
+Toutes les sorties, activités, réservations, évaluations, statistiques et entrées de calendrier affichées par l’application proviennent de Supabase. Le prototype historique fondé sur `localStorage` et ses données fictives ont été retirés.
+
+## Vérifications
+
+```bash
+npm run build
+npm run lint
+```
+
+Production : `https://www.nito-nature.fr`.

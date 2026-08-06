@@ -1,8 +1,0 @@
-import type { Trip } from "@/lib/types";
-export const activities = ["Ornithologie", "Randonnée", "Escalade", "Photo nature", "Botanique", "Astronomie"];
-export const trips: Trip[] = [
-  { id: "oiseaux-fontainebleau", title: "Les oiseaux de la forêt au lever du jour", activity: "Ornithologie", location: "Forêt de Fontainebleau", date: "2026-08-08", time: "06:30", duration: "3 h", level: "Débutant", price: 18, capacity: 8, booked: 5, rating: 4.9, host: "Claire Martin", image: "https://images.unsplash.com/photo-1444464666168-49d633b86797?auto=format&fit=crop&w=1200&q=85", description: "Une balade douce pour apprendre à reconnaître les oiseaux communs par leur chant, leur silhouette et leur comportement." },
-  { id: "escalade-bloc", title: "Premiers pas en escalade sur bloc", activity: "Escalade", location: "Fontainebleau", date: "2026-08-12", time: "09:30", duration: "4 h", level: "Débutant", price: 32, capacity: 6, booked: 4, rating: 4.8, host: "Thomas Berger", image: "https://images.unsplash.com/photo-1522163182402-834f871fd851?auto=format&fit=crop&w=1200&q=85", description: "Découverte du bloc, des règles de sécurité et des gestes essentiels sur des passages accessibles." },
-  { id: "photo-rambouillet", title: "Randonnée photo au cœur des étangs", activity: "Photo nature", location: "Rambouillet", date: "2026-08-16", time: "08:00", duration: "5 h", level: "Intermédiaire", price: 24, capacity: 10, booked: 6, rating: 4.7, host: "Sophie Renard", image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=85", description: "Une sortie mêlant marche, observation et conseils photo pour mieux saisir la lumière et la faune." }
-];
-export function getTrip(id: string) { return trips.find((trip) => trip.id === id); }
