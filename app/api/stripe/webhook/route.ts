@@ -4,9 +4,12 @@ import { getStripe } from "@/lib/stripe/server";
 export const runtime="nodejs";
 
 export async function POST(request:Request){
-  const webhookSecret=process.env.STRIPE_WEBHOOK_SECRET,signature=request.headers.get("stripe-signature");
-  if(!webhookSecret)return new Response("Webhook Stripe non configuré",{status:503});if(!signature)return new Response("Signature absente",{status:400});
-  let event:Stripe.Event;try{event=getStripe().webhooks.constructEvent(await request.text(),signature,webhookSecret);}catch{return new Response("Signature invalide",{status:400});}
+  const webhookSecrets=[process.env.STRIPE_WEBHOOK_SECRET,process.env.STRIPE_CONNECT_WEBHOOK_SECRET].filter((secret):secret is string=>Boolean(secret));
+  const signature=request.headers.get("stripe-signature");
+  if(webhookSecrets.length===0)return new Response("Webhook Stripe non configuré",{status:503});if(!signature)return new Response("Signature absente",{status:400});
+  const payload=await request.text();let event:Stripe.Event|undefined;
+  for(const secret of webhookSecrets){try{event=getStripe().webhooks.constructEvent(payload,signature,secret);break;}catch{}}
+  if(!event)return new Response("Signature invalide",{status:400});
   const admin=createAdminClient();const {error:claimError}=await admin.from("stripe_events").insert({stripe_event_id:event.id,event_type:event.type,livemode:event.livemode,connected_account_id:event.account??null});
   if(claimError?.code==="23505")return new Response("Déjà traité");if(claimError)return new Response("Journal indisponible",{status:500});
   try{

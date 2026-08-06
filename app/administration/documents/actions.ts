@@ -34,6 +34,7 @@ export async function reviewOrganizerDocument(form:FormData){
   const insuranceVerified=verified.some(item=>insuranceTypes.has(item.document_type));
   const {error:profileError}=await admin.from("organizer_profiles").update({qualification_verified:qualificationVerified,insurance_verified:insuranceVerified}).eq("organizer_id",document.organizer_id);
   if(profileError)redirect("/administration/documents?erreur=indicateurs");
+  await admin.from("admin_audit_logs").insert({admin_id:reviewer.id,action:"review_organizer_document",entity_type:"organizer_document",entity_id:documentId,details:{decision,organizer_id:document.organizer_id,qualification_verified:qualificationVerified,insurance_verified:insuranceVerified}});
 
   revalidatePath("/administration");
   revalidatePath("/administration/documents");
