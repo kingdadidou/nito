@@ -5,6 +5,7 @@ import {redirect} from "next/navigation";
 import {requireRole} from "@/lib/auth";
 import {createAdminClient} from "@/lib/supabase/admin";
 import {createClient} from "@/lib/supabase/server";
+import {sendTransactionalEmail} from "@/lib/email/server";
 
 const qualificationTypes=new Set(["diplome","carte_professionnelle","professionnel"]);
 const insuranceTypes=new Set(["assurance_rc_pro","assurance"]);
@@ -35,6 +36,8 @@ export async function reviewOrganizerDocument(form:FormData){
   const {error:profileError}=await admin.from("organizer_profiles").update({qualification_verified:qualificationVerified,insurance_verified:insuranceVerified}).eq("organizer_id",document.organizer_id);
   if(profileError)redirect("/administration/documents?erreur=indicateurs");
   await admin.from("admin_audit_logs").insert({admin_id:reviewer.id,action:"review_organizer_document",entity_type:"organizer_document",entity_id:documentId,details:{decision,organizer_id:document.organizer_id,qualification_verified:qualificationVerified,insurance_verified:insuranceVerified}});
+  const {data:organizerUser}=await admin.from("profiles").select("email,first_name").eq("id",document.organizer_id).single();
+  if(organizerUser?.email)await sendTransactionalEmail({eventKey:`document-moderation:${documentId}:${decision}`,to:organizerUser.email,userId:document.organizer_id,template:"moderation_decision",subject:"Décision concernant votre justificatif",heading:decision==="verifie"?"Votre document a été validé":"Votre document a été refusé",content:`Bonjour ${organizerUser.first_name||""},\nLa modération a ${decision==="verifie"?"validé":"refusé"} un document de votre dossier organisateur.`,actionLabel:"Consulter mon dossier",actionUrl:`${process.env.NEXT_PUBLIC_SITE_URL}/organisateur/onboarding`});
 
   revalidatePath("/administration");
   revalidatePath("/administration/documents");

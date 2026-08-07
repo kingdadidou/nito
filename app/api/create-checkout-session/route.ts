@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { eurosToCents,getStripe } from "@/lib/stripe/server";
+import {getBookingEmailContext,sendTransactionalEmail} from "@/lib/email/server";
 export async function POST(request:Request){
   try{
     const form=await request.formData();const tripId=String(form.get("tripId")??"");const quantity=Number(form.get("quantity")??1);
@@ -14,7 +15,7 @@ export async function POST(request:Request){
     const prepared=data[0];const admin=createAdminClient();
     const {data:trip}=await admin.from("trips").select("organizer_id").eq("id",tripId).single();
     const {data:organizer}=await admin.from("organizer_profiles").select("stripe_connect_account_id,stripe_charges_enabled,stripe_payouts_enabled").eq("organizer_id",trip?.organizer_id).single();
-    if(Number(prepared.amount)===0){await admin.from("bookings").update({payment_status:"paye",booking_status:"confirmee"}).eq("id",prepared.booking_id);return NextResponse.redirect(new URL("/calendrier?reservation=confirmee",request.url),303);}
+    if(Number(prepared.amount)===0){await admin.from("bookings").update({payment_status:"paye",booking_status:"confirmee"}).eq("id",prepared.booking_id);const context=await getBookingEmailContext(prepared.booking_id);if(context?.participant?.email&&context.trip)await sendTransactionalEmail({eventKey:`booking-confirmed:${prepared.booking_id}`,to:context.participant.email,userId:context.participant_id,template:"booking_confirmed",subject:`Réservation confirmée : ${context.trip.title}`,heading:"Votre réservation est confirmée",content:`Votre réservation de ${context.number_of_people} place(s) pour ${context.trip.title} est confirmée. Cette sortie est gratuite.`,actionLabel:"Voir mon calendrier",actionUrl:`${process.env.NEXT_PUBLIC_SITE_URL}/calendrier`});if(context?.organizer?.email&&context.trip)await sendTransactionalEmail({eventKey:`organizer-new-booking:${prepared.booking_id}`,to:context.organizer.email,userId:context.trip.organizer_id,template:"organizer_new_booking",subject:`Nouvelle réservation : ${context.trip.title}`,heading:"Vous avez une nouvelle réservation",content:`${context.participant?.first_name||"Un participant"} a réservé ${context.number_of_people} place(s) pour ${context.trip.title}.`,actionLabel:"Ouvrir mon tableau de bord",actionUrl:`${process.env.NEXT_PUBLIC_SITE_URL}/organisateur`});return NextResponse.redirect(new URL("/calendrier?reservation=confirmee",request.url),303);}
     if(!organizer?.stripe_connect_account_id||!organizer.stripe_charges_enabled||!organizer.stripe_payouts_enabled)return NextResponse.json({error:"L’organisateur ne peut pas encore recevoir de paiements"},{status:409});
     const stripe=getStripe();const account=await stripe.accounts.retrieve(organizer.stripe_connect_account_id);
     if(!account.charges_enabled||!account.payouts_enabled)return NextResponse.json({error:"Le compte de versement de l’organisateur est incomplet"},{status:409});
