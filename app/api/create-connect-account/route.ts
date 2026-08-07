@@ -17,7 +17,7 @@ export async function POST(request:Request){
       }
     }
     if(!accountId){
-      const account=await stripe.accounts.create({type:"express",country:"FR",email:user.email,capabilities:{card_payments:{requested:true},transfers:{requested:true}},business_profile:{product_description:"Organisation de sorties et activités nature via NITO"},metadata:{nito_user_id:user.id}},{idempotencyKey:`connect-account:${user.id}`});
+      const account=await stripe.accounts.create({type:"express",country:"FR",email:user.email,capabilities:{card_payments:{requested:true},transfers:{requested:true}},business_profile:{product_description:"Organisation de sorties et activités nature via NITO"},metadata:{nito_user_id:user.id}},{idempotencyKey:`connect-account:${user.id}:live-v2`});
       accountId=account.id;
       const {error}=await admin.from("organizer_profiles").upsert({organizer_id:user.id,stripe_connect_account_id:accountId},{onConflict:"organizer_id"}); if(error) throw error;
     }
