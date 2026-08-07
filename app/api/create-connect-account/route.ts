@@ -12,7 +12,7 @@ export async function POST(request:Request){
     const stripe=getStripe(); let accountId=organizer?.stripe_connect_account_id;
     if(accountId){
       try{await stripe.accounts.retrieve(accountId);}catch(error){
-        if(error instanceof Error&&"code" in error&&error.code==="resource_missing")accountId=null;
+        if(error instanceof Error&&"code" in error&&(error.code==="resource_missing"||error.code==="account_invalid"))accountId=null;
         else throw error;
       }
     }
