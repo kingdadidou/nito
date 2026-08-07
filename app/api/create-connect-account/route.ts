@@ -10,8 +10,14 @@ export async function POST(request:Request){
     if(profile?.user_type!=="organisateur"&&profile?.user_type!=="administrateur") return NextResponse.json({error:"Compte organisateur requis"},{status:403});
     const admin=createAdminClient(); const {data:organizer}=await admin.from("organizer_profiles").select("stripe_connect_account_id").eq("organizer_id",user.id).single();
     const stripe=getStripe(); let accountId=organizer?.stripe_connect_account_id;
+    if(accountId){
+      try{await stripe.accounts.retrieve(accountId);}catch(error){
+        if(error instanceof Error&&"code" in error&&error.code==="resource_missing")accountId=null;
+        else throw error;
+      }
+    }
     if(!accountId){
-      const account=await stripe.accounts.create({type:"express",country:"FR",email:user.email,capabilities:{card_payments:{requested:true},transfers:{requested:true}},business_profile:{product_description:"Organisation de sorties nature via NaturEnsemble"},metadata:{naturensemble_user_id:user.id}},{idempotencyKey:`connect-account:${user.id}`});
+      const account=await stripe.accounts.create({type:"express",country:"FR",email:user.email,capabilities:{card_payments:{requested:true},transfers:{requested:true}},business_profile:{product_description:"Organisation de sorties et activités nature via NITO"},metadata:{nito_user_id:user.id}},{idempotencyKey:`connect-account:${user.id}`});
       accountId=account.id;
       const {error}=await admin.from("organizer_profiles").upsert({organizer_id:user.id,stripe_connect_account_id:accountId},{onConflict:"organizer_id"}); if(error) throw error;
     }
