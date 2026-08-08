@@ -13,7 +13,7 @@ export default async function Home(){
   const [profileResult,activitiesResult,tripsResult,membersResult,tripsCountResult,reviewsResult]=supabase?await Promise.all([
     user?supabase.from("profiles").select("user_type").eq("id",user.id).single():Promise.resolve({data:null}),
     supabase.from("activities").select("id,name,icon").order("name"),
-    supabase.from("trips").select("id,title,location,date,price,activity:activities(name),organizer:profiles(first_name,last_name,average_rating),images:trip_images(public_url,alt_text,position)").eq("status","publiee").gte("date",today).order("date").limit(3),
+    supabase.from("trips").select("id,title,location,date,price,activity:activities(name),organizer:profiles!trips_organizer_id_fkey(first_name,last_name,average_rating),images:trip_images(public_url,alt_text,position)").eq("status","publiee").gte("date",today).order("date").limit(3),
     supabase.from("profiles").select("id",{count:"exact",head:true}),
     supabase.from("trips").select("id",{count:"exact",head:true}).eq("status","publiee"),
     supabase.from("reviews").select("rating"),
