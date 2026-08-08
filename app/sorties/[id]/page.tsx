@@ -9,7 +9,7 @@ import {toggleOrganizerSubscription} from "@/app/abonnements/actions";
 export default async function TripDetail({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{abonnement?:string;paiement?:string}>}){
   const [{id},q]=await Promise.all([params,searchParams]);if(!/^[0-9a-f-]{36}$/i.test(id))notFound();
   const supabase=await createClient();if(!supabase)notFound();
-  const {data:trip}=await supabase.from("trips").select("id,title,description,location,date,start_time,duration,difficulty,maximum_participants,price,status,organizer_id,activity:activities(name),organizer:profiles(id,first_name,last_name,average_rating),images:trip_images(public_url,alt_text,position)").eq("id",id).single();
+  const {data:trip}=await supabase.from("trips").select("id,title,description,location,date,start_time,duration,difficulty,maximum_participants,price,status,organizer_id,activity:activities(name),organizer:profiles!trips_organizer_id_fkey(id,first_name,last_name,average_rating),images:trip_images(public_url,alt_text,position)").eq("id",id).single();
   if(!trip)notFound();
   const activity=Array.isArray(trip.activity)?trip.activity[0]:trip.activity;const organizer=Array.isArray(trip.organizer)?trip.organizer[0]:trip.organizer;const image=[...(trip.images??[])].sort((a,b)=>a.position-b.position)[0];
   const admin=createAdminClient();const {data:confirmedBookings}=await admin.from("bookings").select("number_of_people").eq("trip_id",trip.id).in("booking_status",["confirmee","terminee"]);const booked=(confirmedBookings??[]).reduce((sum,item)=>sum+item.number_of_people,0);
