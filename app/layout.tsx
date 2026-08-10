@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { PrivacyAnalytics } from "@/components/privacy-analytics";
 import "./globals.css";
 import "./logo.css";
 import "leaflet/dist/leaflet.css";
@@ -33,4 +34,4 @@ export const metadata: Metadata = {
   },
   icons: { icon: "/nito-logo.png", apple: "/nito-logo.png" },
 };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="fr"><body className={`${dm.variable} ${playfair.variable}`}><Header /><main>{children}</main><Footer /></body></html> }
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="fr"><body className={`${dm.variable} ${playfair.variable}`}><Header /><main>{children}</main><Footer /><PrivacyAnalytics /></body></html> }
