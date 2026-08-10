@@ -4,6 +4,7 @@ import {createClient} from "@/lib/supabase/server";
 import {createAdminClient} from "@/lib/supabase/admin";
 import {getStripe} from "@/lib/stripe/server";
 import {getBookingEmailContext,sendTransactionalEmail} from "@/lib/email/server";
+import {notifyIndexNow} from "@/lib/indexnow";
 
 async function requireOwner(tripId:string){
   const supabase=await createClient();const user=supabase?(await supabase.auth.getUser()).data.user:null;if(!user)redirect("/connexion");
@@ -20,6 +21,7 @@ export async function updateTrip(form:FormData){
   const {data:confirmed}=await admin.from("bookings").select("id,participant_id").eq("trip_id",tripId).eq("booking_status","confirmee");const ids=[...new Set((confirmed??[]).map(p=>p.participant_id))];
   if(ids.length)await admin.from("notifications").insert(ids.map(id=>({user_id:id,type:"trip_updated",title:"Une sortie a été modifiée",content:`Les informations de « ${update.title} » ont changé.`,data:{trip_id:tripId}})));
   for(const booking of confirmed??[]){const context=await getBookingEmailContext(booking.id);if(context?.participant?.email)await sendTransactionalEmail({eventKey:`trip-updated:${tripId}:${booking.participant_id}:${Date.now()}`,to:context.participant.email,userId:booking.participant_id,template:"trip_updated",subject:`Sortie modifiée : ${update.title}`,heading:"Votre sortie a été mise à jour",content:"Consultez les nouvelles informations dans votre espace NITO.",actionLabel:"Voir ma réservation",actionUrl:`${process.env.NEXT_PUBLIC_SITE_URL}/reservations`});}
+  await notifyIndexNow(["/","/explorer",`/sorties/${tripId}`,"/sitemap.xml"]);
   redirect(`/organisateur/sorties/${tripId}?succes=modifiee`);
 }
 
@@ -34,5 +36,6 @@ export async function cancelTrip(form:FormData){
     const context=await getBookingEmailContext(booking.id);if(context?.participant?.email)await sendTransactionalEmail({eventKey:`trip-cancelled:${booking.id}`,to:context.participant.email,userId:booking.participant_id,template:"trip_cancelled",subject:`Sortie annulée : ${trip.title}`,heading:"Votre sortie est annulée",content:`Motif : ${reason}. Tout paiement concerné fait l’objet d’un remboursement.`,actionLabel:"Voir mes réservations",actionUrl:`${process.env.NEXT_PUBLIC_SITE_URL}/reservations`});
   }
   const {error}=await supabase!.from("trips").update({status:"annulee",registrations_closed:true,cancellation_reason:reason,cancelled_at:new Date().toISOString()}).eq("id",tripId);if(error)redirect(`/organisateur/sorties/${tripId}?erreur=annulation`);
+  await notifyIndexNow(["/","/explorer",`/sorties/${tripId}`,"/sitemap.xml"]);
   redirect(`/organisateur/sorties/${tripId}?succes=annulee`);
 }
