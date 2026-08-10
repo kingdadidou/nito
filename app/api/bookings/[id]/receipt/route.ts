@@ -1,0 +1,11 @@
+import {NextResponse} from "next/server";
+import {createClient} from "@/lib/supabase/server";
+import {createAdminClient} from "@/lib/supabase/admin";
+
+export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){
+  const {id}=await params;const supabase=await createClient();const user=supabase?(await supabase.auth.getUser()).data.user:null;if(!user)return NextResponse.redirect(new URL("/connexion",process.env.NEXT_PUBLIC_SITE_URL));
+  const admin=createAdminClient();const {data:b}=await admin.from("bookings").select("id,participant_id,number_of_people,amount,payment_status,booking_status,created_at,trip:trips(title,date,start_time,location),participant:profiles!bookings_participant_id_fkey(first_name,last_name,email)").eq("id",id).single();if(!b||b.participant_id!==user.id)return new NextResponse("Accès refusé",{status:403});
+  const trip=Array.isArray(b.trip)?b.trip[0]:b.trip;const p=Array.isArray(b.participant)?b.participant[0]:b.participant;const esc=(v:unknown)=>String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]!));
+  const html=`<!doctype html><html lang="fr"><meta charset="utf-8"><title>Justificatif NITO ${esc(b.id)}</title><style>body{font-family:Arial;max-width:760px;margin:50px auto;color:#17352c}h1{color:#198754}.box{border:1px solid #ccc;padding:24px;border-radius:12px}button{padding:10px;margin-top:20px}@media print{button{display:none}}</style><h1>NITO</h1><h2>Justificatif de réservation</h2><div class="box"><p><b>Référence :</b> ${esc(b.id)}</p><p><b>Participant :</b> ${esc(p?.first_name)} ${esc(p?.last_name)} — ${esc(p?.email)}</p><p><b>Sortie :</b> ${esc(trip?.title)}</p><p><b>Date :</b> ${esc(trip?.date)} à ${esc(String(trip?.start_time).slice(0,5))}</p><p><b>Lieu :</b> ${esc(trip?.location)}</p><p><b>Places :</b> ${b.number_of_people}</p><p><b>Montant :</b> ${Number(b.amount).toFixed(2)} €</p><p><b>Statut :</b> ${esc(b.payment_status)} / ${esc(b.booking_status)}</p></div><button onclick="print()">Imprimer ou enregistrer en PDF</button><p><small>Ce document est un justificatif de réservation et non une facture fiscale.</small></p></html>`;
+  return new NextResponse(html,{headers:{"content-type":"text/html; charset=utf-8","content-disposition":`inline; filename="reservation-nito-${b.id}.html"`}});
+}
