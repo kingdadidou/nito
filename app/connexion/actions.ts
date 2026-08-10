@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isValidPassword, normalizeSignupIntent, postSignupDestination } from "@/lib/domain/rules";
 
 const siteUrl = () => process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 async function authClient() { const client = await createClient(); if (!client) redirect("/connexion?erreur=configuration"); return client; }
@@ -16,15 +17,14 @@ export async function signUp(form: FormData) {
   const supabase = await authClient();
   if (form.get("legal_acceptance") !== "accepted") redirect("/inscription?erreur=conditions");
   const password = String(form.get("password") ?? "");
-  if (password.length < 8) redirect("/inscription?erreur=mot_de_passe");
-  const intent = String(form.get("signup_intent") ?? "participer");
+  if (!isValidPassword(password)) redirect("/inscription?erreur=mot_de_passe");
+  const intent = normalizeSignupIntent(String(form.get("signup_intent") ?? "participer"));
   const { data, error } = await supabase.auth.signUp({
     email: String(form.get("email") ?? ""), password,
-    options: { emailRedirectTo: `${siteUrl()}/auth/callback?next=/bienvenue`, data: { first_name: String(form.get("first_name") ?? ""), last_name: String(form.get("last_name") ?? ""), signup_intent: ["participer","organiser","les_deux"].includes(intent) ? intent : "participer" } }
+    options: { emailRedirectTo: `${siteUrl()}/auth/callback?next=/bienvenue`, data: { first_name: String(form.get("first_name") ?? ""), last_name: String(form.get("last_name") ?? ""), signup_intent: intent } }
   });
   if (error) redirect("/inscription?erreur=inscription");
-  if (data.session) redirect(intent === "participer" ? "/profil" : "/organisateur/onboarding");
-  redirect("/inscription?confirmation=envoyee");
+  redirect(postSignupDestination(intent, Boolean(data.session)));
 }
 
 export async function sendMagicLink(form: FormData) {
@@ -50,7 +50,7 @@ export async function requestPasswordReset(form: FormData) {
 
 export async function updatePassword(form: FormData) {
   const password = String(form.get("password") ?? "");
-  if (password.length < 8) redirect("/mot-de-passe/nouveau?erreur=mot_de_passe");
+  if (!isValidPassword(password)) redirect("/mot-de-passe/nouveau?erreur=mot_de_passe");
   const supabase = await authClient(); const { error } = await supabase.auth.updateUser({ password });
   if (error) redirect("/mot-de-passe/nouveau?erreur=session");
   redirect("/connexion?confirmation=mot_de_passe_modifie");
