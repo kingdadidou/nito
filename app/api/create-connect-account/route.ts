@@ -24,5 +24,12 @@ export async function POST(request:Request){
     const origin=process.env.NEXT_PUBLIC_SITE_URL??new URL(request.url).origin;
     const link=await stripe.accountLinks.create({account:accountId,refresh_url:`${origin}/api/connect/refresh`,return_url:`${origin}/api/connect/return`,type:"account_onboarding"});
     return NextResponse.redirect(link.url,303);
-  }catch(error){console.error("Connect onboarding",error);return NextResponse.json({error:"Impossible de démarrer l’inscription Stripe"},{status:500});}
+  }catch(error){
+    console.error("Connect onboarding",error);
+    const message=error instanceof Error?error.message:"";
+    if(message.includes("complete your platform profile")){
+      return NextResponse.redirect(new URL("/organisateur/onboarding?stripe=plateforme-incomplete",request.url),303);
+    }
+    return NextResponse.redirect(new URL("/organisateur/onboarding?stripe=erreur",request.url),303);
+  }
 }
