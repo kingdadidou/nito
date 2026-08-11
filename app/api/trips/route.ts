@@ -21,6 +21,11 @@ export async function POST(request: Request) {
   }
   const duration = Number.parseInt(String(payload.duration), 10);const latitude=Number(payload.latitude),longitude=Number(payload.longitude);
   if(!Number.isFinite(latitude)||latitude< -90||latitude>90||!Number.isFinite(longitude)||longitude< -180||longitude>180)return NextResponse.json({error:"Placez le point de rendez-vous sur la carte"},{status:400});
+  const image=form.get("image");
+  if(image instanceof File&&image.size>0){
+    const allowed=new Set(["image/jpeg","image/png","image/webp"]);
+    if(!allowed.has(image.type)||image.size>10_485_760)return NextResponse.json({error:"Photo invalide (JPG, PNG ou WebP, 10 Mo maximum)"},{status:400});
+  }
   const { data:trip,error } = await supabase.from("trips").insert({
     organizer_id: user.id, activity_id: activity.id, title: String(payload.title), description: String(payload.description),
     location: String(payload.location),latitude,longitude,meeting_point:String(payload.meeting_point),date: String(payload.date),
@@ -29,10 +34,7 @@ export async function POST(request: Request) {
     price, offer_type:offerType, equipment: String(payload.equipment || ""), status: "en_attente"
   }).select("id").single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  const image=form.get("image");
   if(trip&&image instanceof File&&image.size>0){
-    const allowed=new Set(["image/jpeg","image/png","image/webp"]);
-    if(!allowed.has(image.type)||image.size>10_485_760)return NextResponse.json({error:"Photo invalide (JPG, PNG ou WebP, 10 Mo maximum)"},{status:400});
     const extension=image.type==="image/jpeg"?"jpg":image.type==="image/png"?"png":"webp";const path=`${trip.id}/${crypto.randomUUID()}.${extension}`;const admin=createAdminClient();
     const {error:uploadError}=await admin.storage.from("trip-images").upload(path,new Uint8Array(await image.arrayBuffer()),{contentType:image.type});
     if(uploadError)return NextResponse.json({error:"La sortie a été créée, mais la photo n’a pas pu être envoyée"},{status:500});
