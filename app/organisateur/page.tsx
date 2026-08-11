@@ -14,7 +14,7 @@ export default async function Organizer(){
   const [{count:active},{count:followers},{data:trips},{data:reviews},{data:ownedTrips}]=await Promise.all([
     supabase.from("trips").select("id",{count:"exact",head:true}).eq("organizer_id",user.id).eq("status","publiee").gte("date",today),
     supabase.from("organizer_subscriptions").select("participant_id",{count:"exact",head:true}).eq("organizer_id",user.id),
-    supabase.from("trips").select("id,title,date,start_time,location,status").eq("organizer_id",user.id).gte("date",today).order("date").limit(10),
+    supabase.from("trips").select("id,title,date,start_time,location,status").eq("organizer_id",user.id).in("status",["brouillon","en_attente","publiee"]).gte("date",today).order("date").limit(10),
     supabase.from("reviews").select("rating").eq("recipient_id",user.id),
     supabase.from("trips").select("id").eq("organizer_id",user.id),
   ]);
