@@ -1,6 +1,1 @@
-export function LegalDraftWarning() {
-  return <aside className="legal-warning" role="note">
-    <strong>Informations à compléter avant l’ouverture commerciale</strong>
-    <p>La forme juridique, le numéro SIREN/SIRET, l’adresse du siège, le capital social, le numéro de TVA et le directeur de la publication devront être renseignés dès l’immatriculation de NITO. Ces textes devront ensuite être validés par un professionnel du droit.</p>
-  </aside>;
-}
+export function LegalDraftWarning(){return <aside className="legal-warning" role="note"><strong>Document préparatoire — validation juridique encore requise</strong><p>Les informations connues de l’entreprise sont renseignées. La publication commerciale des services payants reste conditionnée à la validation de la modification INPI, à l’obtention des données définitives de l’établissement, à la désignation d’un médiateur de la consommation et à la relecture de ces textes par un professionnel du droit.</p></aside>}
