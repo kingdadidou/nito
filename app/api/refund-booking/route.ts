@@ -16,8 +16,8 @@ export async function POST(request:Request){
     const free=Number(booking.amount)===0;let refundId:string|undefined;
     if(!free){
       if(!booking.stripe_payment_intent_id)return NextResponse.json({error:"Le paiement Stripe est introuvable"},{status:409});
-      const refund=await getStripe().refunds.create({payment_intent:booking.stripe_payment_intent_id,reverse_transfer:true,refund_application_fee:true,reason:"requested_by_customer",metadata:{booking_id:booking.id,reason}},{idempotencyKey:`refund:${booking.id}:full`});refundId=refund.id;
-      await admin.from("refunds").upsert({booking_id:booking.id,stripe_refund_id:refund.id,amount:Number(booking.amount),reason,requested_by:user.id,status:refund.status==="succeeded"?"rembourse":"en_attente",reverse_transfer:true,refund_application_fee:true},{onConflict:"stripe_refund_id"});
+      const refund=await getStripe().refunds.create({payment_intent:booking.stripe_payment_intent_id,reverse_transfer:true,reason:"requested_by_customer",metadata:{booking_id:booking.id,reason}},{idempotencyKey:`refund:v2:${booking.id}:full`});refundId=refund.id;
+      await admin.from("refunds").upsert({booking_id:booking.id,stripe_refund_id:refund.id,amount:Number(booking.amount),reason,requested_by:user.id,status:refund.status==="succeeded"?"rembourse":"en_attente",reverse_transfer:true,refund_application_fee:false},{onConflict:"stripe_refund_id"});
     }
     const {error:updateError}=await admin.from("bookings").update({booking_status:"annulee",cancelled_at:new Date().toISOString(),cancellation_reason:reason}).eq("id",booking.id).eq("booking_status","confirmee");
     if(updateError)throw updateError;
