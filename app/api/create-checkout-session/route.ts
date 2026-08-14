@@ -4,8 +4,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { eurosToCents,getStripe } from "@/lib/stripe/server";
 import {getBookingEmailContext,sendTransactionalEmail} from "@/lib/email/server";
 export async function POST(request:Request){
+  let tripId="";
   try{
-    const form=await request.formData();const tripId=String(form.get("tripId")??"");const quantity=Number(form.get("quantity")??1);
+    const form=await request.formData();tripId=String(form.get("tripId")??"");const quantity=Number(form.get("quantity")??1);
     if(form.get("booking_terms")!=="accepted")return NextResponse.json({error:"Les conditions de réservation doivent être acceptées"},{status:400});
     if(!/^[0-9a-f-]{36}$/i.test(tripId)||!Number.isInteger(quantity))return NextResponse.json({error:"Réservation invalide"},{status:400});
     const supabase=await createClient();if(!supabase)return NextResponse.json({error:"Supabase non configuré"},{status:503});
@@ -32,5 +33,5 @@ export async function POST(request:Request){
     const session=await stripe.checkout.sessions.create({mode:"payment",customer_email:user.email,line_items:[{quantity:1,price_data:{currency:"eur",unit_amount:eurosToCents(Number(prepared.amount)),product_data:{name:prepared.trip_title,description:`${quantity} participant${quantity>1?"s":""}`}}}],client_reference_id:prepared.booking_id,metadata:{booking_id:prepared.booking_id,trip_id:tripId,participant_id:user.id},payment_intent_data:{application_fee_amount:eurosToCents(Number(prepared.platform_fee)),transfer_data:{destination:organizer.stripe_connect_account_id},metadata:{booking_id:prepared.booking_id,trip_id:tripId}},success_url:`${origin}/calendrier?reservation=confirmee&session_id={CHECKOUT_SESSION_ID}`,cancel_url:`${origin}/sorties/${tripId}?paiement=annule`},{idempotencyKey:`checkout:${prepared.booking_id}`});
     const {error:updateError}=await admin.from("bookings").update({stripe_checkout_session_id:session.id}).eq("id",prepared.booking_id);if(updateError)throw updateError;
     return NextResponse.redirect(session.url!,303);
-  }catch(error){console.error("Checkout Connect",error);return NextResponse.json({error:"Impossible de créer le paiement"},{status:500});}
+  }catch(error){console.error("Checkout Connect",error);const code=error&&typeof error==="object"&&"code" in error?String(error.code):"inconnue";const target=/^[0-9a-f-]{36}$/i.test(tripId)?`/sorties/${tripId}?paiement=erreur&code=${encodeURIComponent(code)}`:"/explorer?paiement=erreur";return NextResponse.redirect(new URL(target,request.url),303);}
 }
