@@ -20,7 +20,7 @@ export function DashboardNav({role}: {role: DashboardRole}) {
     ? [["/administration", "Vue d’ensemble"], ["/administration/sorties", "Sorties"], ["/administration/documents", "Justificatifs"], ["/administration/reservations", "Réservations"], ["/administration/finances", "Finances"], ["/administration/avis", "Avis"], ["/administration/signalements", "Signalements"], ["/administration/utilisateurs", "Utilisateurs"], ["/administration/emails", "E-mails"], ["/administration/procedures", "Procédures"], ["/administration/journal", "Journal"], ...common]
     : normalized === "organisateur"
       ? [["/organisateur", "Tableau de bord"], ["/organisateur/sorties/nouvelle", "Créer une sortie"], ["/organisateur/onboarding", "Mon dossier"], ...common]
-      : [["/reservations", "Mes réservations"], ["/abonnements", "Mes abonnements"], ["/avis", "Mes avis"], ...common];
+      : [["/espace", "Vue d’ensemble"], ["/reservations", "Mes réservations"], ["/abonnements", "Mes abonnements"], ["/messages", "Messages"], ["/avis", "Avis à publier"], ["/profil", "Mon profil"], ["/calendrier", "Calendrier"], ["/notifications", "Notifications"]];
 
   return <nav className="dashboard-nav" aria-label="Navigation de l’espace personnel">
     {links.map(([href, label]) => {

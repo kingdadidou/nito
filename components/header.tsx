@@ -10,7 +10,7 @@ export async function Header() {
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   const profile = user && supabase ? (await supabase.from("profiles").select("first_name,user_type").eq("id", user.id).single()).data : null;
   const role = profile?.user_type as Role | undefined;
-  const accountHref = role === "administrateur" ? "/administration" : role === "organisateur" ? "/organisateur" : "/profil";
+  const accountHref = role === "administrateur" ? "/administration" : role === "organisateur" ? "/organisateur" : "/espace";
   return <header className="topbar">
     <Link className="brand" href="/" aria-label="NITO — Accueil"><Image className="brand-logo" src="/nito-logo.png" alt="" width={44} height={44} priority /><span>NITO</span></Link>
     <HeaderNavigation authenticated={Boolean(user)} role={role} />

@@ -2,7 +2,7 @@
 
 import {Analytics} from "@vercel/analytics/next";
 
-const privatePrefixes=["/administration","/organisateur","/profil","/reservations","/calendrier","/messages","/notifications","/avis","/abonnements","/auth","/api","/mot-de-passe","/compte-suspendu"];
+const privatePrefixes=["/administration","/organisateur","/espace","/profil","/reservations","/calendrier","/messages","/notifications","/avis","/abonnements","/auth","/api","/mot-de-passe","/compte-suspendu"];
 
 export function PrivacyAnalytics(){
   return <Analytics beforeSend={event=>{
