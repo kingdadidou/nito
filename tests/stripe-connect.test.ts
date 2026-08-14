@@ -1,0 +1,4 @@
+import {describe,expect,it} from "vitest";
+import {stripeConnectState,stripeRequirementsDigest,StripeConnectSnapshot} from "@/lib/domain/stripe-connect";
+const base:StripeConnectSnapshot={chargesEnabled:false,payoutsEnabled:false,detailsSubmitted:false,currentlyDue:[],eventuallyDue:[],disabledReason:null,currentDeadline:null};
+describe("accompagnement Stripe Connect",()=>{it("distingue les principales étapes",()=>{expect(stripeConnectState(null)).toBe("non_commence");expect(stripeConnectState({...base,currentlyDue:["external_account"]})).toBe("action_requise");expect(stripeConnectState({...base,detailsSubmitted:true})).toBe("verification_en_cours");expect(stripeConnectState({...base,chargesEnabled:true,payoutsEnabled:true})).toBe("active")});it("produit une empreinte stable",()=>expect(stripeRequirementsDigest({...base,currentlyDue:["b","a"]})).toBe("a|b"))});
