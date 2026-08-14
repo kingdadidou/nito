@@ -7,31 +7,7 @@ import {defaultTripImage} from "@/lib/trip-display";
 import {toggleOrganizerSubscription} from "@/app/abonnements/actions";
 import {PublicMap} from "@/components/public-map";
 
-type WeatherSummary={label:string;icon:string;minimum:number;maximum:number;rain:number};
 const organizerLevels:Record<string,string>={passionne_verifie:"Passionné vérifié",association:"Association",professionnel_diplome:"Professionnel diplômé",guide_educateur_sportif:"Guide ou éducateur sportif"};
-
-function weatherLabel(code:number){
-  if(code===0)return ["Ciel dégagé","☀️"];
-  if(code<=3)return ["Partiellement nuageux","⛅"];
-  if(code<=48)return ["Brume ou brouillard","🌫️"];
-  if(code<=67)return ["Pluie possible","🌦️"];
-  if(code<=77)return ["Neige possible","🌨️"];
-  if(code<=82)return ["Averses","🌧️"];
-  return ["Risque d’orage","⛈️"];
-}
-
-async function getWeather(latitude:number|null,longitude:number|null,date:string):Promise<WeatherSummary|null>{
-  if(latitude==null||longitude==null)return null;
-  const days=Math.ceil((new Date(`${date}T12:00:00`).getTime()-Date.now())/86400000);
-  if(days<0||days>15)return null;
-  try{
-    const url=new URL("https://api.open-meteo.com/v1/forecast");
-    url.searchParams.set("latitude",String(latitude));url.searchParams.set("longitude",String(longitude));url.searchParams.set("daily","weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max");url.searchParams.set("timezone","Europe/Paris");url.searchParams.set("start_date",date);url.searchParams.set("end_date",date);
-    const response=await fetch(url,{next:{revalidate:1800}});if(!response.ok)return null;
-    const json=await response.json();const code=Number(json.daily?.weather_code?.[0]);const [label,icon]=weatherLabel(code);
-    return {label,icon,minimum:Number(json.daily?.temperature_2m_min?.[0]),maximum:Number(json.daily?.temperature_2m_max?.[0]),rain:Number(json.daily?.precipitation_probability_max?.[0]??0)};
-  }catch{return null;}
-}
 
 export default async function TripDetail({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{abonnement?:string;paiement?:string;reservation?:string;code?:string}>}){
   const [{id},q]=await Promise.all([params,searchParams]);if(!/^[0-9a-f-]{36}$/i.test(id))notFound();
@@ -51,7 +27,6 @@ export default async function TripDetail({params,searchParams}:{params:Promise<{
   const subscription=user&&organizer?.id&&viewer?.user_type==="participant"?(await supabase.from("organizer_subscriptions").select("organizer_id").eq("participant_id",user.id).eq("organizer_id",organizer.id).maybeSingle()).data:null;
   const existingBooking=user?(await supabase.from("bookings").select("id,booking_status").eq("trip_id",trip.id).eq("participant_id",user.id).in("booking_status",["confirmee","terminee"]).maybeSingle()).data:null;
   const exactLocation=user?(await supabase.rpc("get_exact_trip_location",{p_trip_id:trip.id})).data?.[0]:null;
-  const weather=await getWeather(trip.approximate_latitude==null?null:Number(trip.approximate_latitude),trip.approximate_longitude==null?null:Number(trip.approximate_longitude),trip.date);
   const organizerName=`${organizer?.first_name??""} ${organizer?.last_name??""}`.trim()||"Organisateur NITO";
   const bookingOpen=trip.status==="publiee"&&!trip.registrations_closed&&placesLeft>0&&new Date(trip.date)>=new Date(new Date().toISOString().slice(0,10));const formAction=Number(trip.price)>0?"/api/create-checkout-session":"/api/bookings/free";
   const start=String(trip.start_time).slice(0,5);const endDate=new Date(`${trip.date}T${start}:00`);endDate.setMinutes(endDate.getMinutes()+trip.duration);const end=endDate.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
@@ -86,7 +61,6 @@ export default async function TripDetail({params,searchParams}:{params:Promise<{
       <aside className="booking-column"><section className="panel-card booking-card"><span className="big-price">{Number(trip.price)===0?"Gratuit":`${Number(trip.price).toFixed(2)} €`}</span>{Number(trip.price)>0&&" par personne"}<p>📅 {new Intl.DateTimeFormat("fr-FR",{dateStyle:"long"}).format(new Date(trip.date))} à {start}</p><p>📍 {trip.location}</p><div className={`availability-meter ${placesLeft<=3?"limited":""}`}><div><strong>{placesLeft}</strong> place{placesLeft!==1&&"s"} disponible{placesLeft!==1&&"s"}</div><progress max={trip.maximum_participants} value={booked}/><small>{booked} réservation{booked!==1&&"s"} sur {trip.maximum_participants}</small></div>
         {existingBooking?<><p className="form-alert success">Votre réservation est confirmée.</p><Link className="primary wide" href="/reservations">Gérer ma réservation</Link></>:bookingOpen?<form action={formAction} method="post"><input type="hidden" name="tripId" value={trip.id}/><label>Participants<input name="quantity" type="number" min="1" max={Math.min(20,placesLeft)} defaultValue="1"/></label><label className="legal-consent"><input type="checkbox" name="booking_terms" value="accepted" required/><span>J’accepte les <Link href="/conditions" target="_blank">conditions de réservation</Link> et la <Link href="/annulations" target="_blank">politique d’annulation</Link>.</span></label><button className="primary wide">{Number(trip.price)>0?"Réserver et payer":"Réserver gratuitement"}</button></form>:<p>{trip.registrations_closed?"Les inscriptions ont été fermées par l’organisateur.":placesLeft===0?"Cette sortie est complète.":"Cette sortie n’est plus ouverte à la réservation."}</p>}
         {Number(trip.price)>0&&<small className="payment-disclaimer">Paiement sécurisé par Stripe · Commission NITO incluse</small>}</section>
-        <section className="panel-card weather-card"><div className="weather-title"><span>{weather?.icon??"🌤️"}</span><div><small>MÉTÉO INDICATIVE</small><h3>{weather?.label??"Prévision bientôt disponible"}</h3></div></div>{weather&&<p><b>{Math.round(weather.minimum)}–{Math.round(weather.maximum)} °C</b> · {Math.round(weather.rain)} % de risque de pluie</p>}<small>Prévision susceptible d’évoluer. Vérifiez-la avant votre départ.</small></section>
       </aside>
     </div>
 
