@@ -19,6 +19,6 @@ export async function POST(request: Request) {
     ]);
     if(context?.participant?.email&&context.trip)await sendTransactionalEmail({eventKey:`booking-confirmed:${booking.booking_id}`,to:context.participant.email,userId:context.participant_id,template:"booking_confirmed",subject:`Réservation confirmée : ${context.trip.title}`,heading:"Votre réservation est confirmée",content:`Votre réservation de ${context.number_of_people} place(s) pour ${context.trip.title} est confirmée. Aucun paiement n’est nécessaire.`,actionLabel:"Voir ma réservation",actionUrl:`${process.env.NEXT_PUBLIC_SITE_URL}/reservations`});
     if(context?.organizer?.email&&context.trip)await sendTransactionalEmail({eventKey:`organizer-new-booking:${booking.booking_id}`,to:context.organizer.email,userId:context.trip.organizer_id,template:"organizer_new_booking",subject:`Nouvelle réservation : ${context.trip.title}`,heading:"Vous avez une nouvelle réservation",content:`${context.participant?.first_name||"Un participant"} a réservé ${context.number_of_people} place(s) pour ${context.trip.title}.`,actionLabel:"Voir les participants",actionUrl:`${process.env.NEXT_PUBLIC_SITE_URL}/organisateur/sorties/${context.trip.id}`});
-    return NextResponse.redirect(new URL("/reservations?reservation=confirmee",request.url),303);
+    return NextResponse.redirect(new URL(`/reservation/confirmation?booking_id=${booking.booking_id}`,request.url),303);
   }catch(error){console.error("Free booking",error);return NextResponse.json({error:"Réservation impossible"},{status:500});}
 }
